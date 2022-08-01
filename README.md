@@ -4,7 +4,7 @@ Code Documentation
 ------------
 The project documentation can be found in the following link:
 
-[__rt2_assignment/index.html__](https://github.com/raja-sahab/rt2-assignment/blob/main/docs/index.html)
+[__rt2_assignment/index.html__](file:///home/farooq/my_ros_ws/src/rt2_assignment/docs/index.html)
 
 Jupyter notebook
 ------------
