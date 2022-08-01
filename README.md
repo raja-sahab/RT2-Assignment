@@ -8,7 +8,7 @@ The project documentation can be found in the following link:
 
 Jupyter notebook
 ------------
-The jupyter notebook can be found here: [__rt2_assignment_Jupyter.ipynb__](https://github.com/raja-sahab/rt2_assignment/notebook/blob/main/driving_mode_notebook.ipynb)
+The jupyter notebook can be found here: [__driving_mode_notebook.ipynb__](https://github.com/raja-sahab/rt2-assignment/blob/main/notebook/driving_mode_notebook.ipynb)
 
 Data Analysis
 ------------
