@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>scripts.driving_mode &mdash; rt2_assignment 1.0 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> rt2_assignment
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">rt2_assignment</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      <li>scripts.driving_mode</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for scripts.driving_mode</h1><div class="highlight"><pre>
+<span></span><span class="ch">#! /usr/bin/env python</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">.. module:: driving_mode</span>
+<span class="sd">    :platform: Unix</span>
+<span class="sd">    :synopsis: Python module for choosing the driving modality.</span>
+
+<span class="sd">.. moduleauthor:: Raja Farooq Dilshad</span>
+
+<span class="sd">This node allows the user to choose the drive modality between:</span>
+
+<span class="sd">* :mod:`autonomous_driving`</span>
+
+<span class="sd">* :mod:`free_drive`</span>
+
+<span class="sd">* :mod:`driver_assistance`</span>
+
+<span class="sd">It uses the user interface defined in the :mod:`user_interface` module.</span>
+<span class="sd">According to the user&#39;s choice, it gives the control to the corresponding module, and shows results on screen.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1"># Run with: roslaunch final_assignment assignment.launch</span>
+
+<span class="c1">### STANDARD LIBRARIES ###</span>
+<span class="kn">import</span> <span class="nn">rospy</span>
+<span class="kn">import</span> <span class="nn">curses</span>
+
+<span class="c1">### MY CODE ###</span>
+<span class="kn">import</span> <span class="nn">user_interface</span>
+<span class="kn">import</span> <span class="nn">autonomous_driving</span>
+<span class="kn">import</span> <span class="nn">free_drive</span>
+<span class="kn">import</span> <span class="nn">client_drive_assistance</span>
+
+<span class="c1">### FUNCTION ###</span>
+<div class="viewcode-block" id="ask_for_goal"><a class="viewcode-back" href="../../index.html#scripts.driving_mode.ask_for_goal">[docs]</a><span class="k">def</span> <span class="nf">ask_for_goal</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;This function asks the user to input the x and the y position of the goal, returning them as floating point.</span>
+<span class="sd">    </span>
+<span class="sd">	Returns:</span>
+<span class="sd">		(tuple):</span>
+<span class="sd">		</span>
+<span class="sd">			fx: float - x position of the goal</span>
+<span class="sd">			</span>
+<span class="sd">			fy: float - y position of the goal</span>
+<span class="sd">        </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+
+        <span class="c1"># Asks the user for the x position.</span>
+        <span class="n">ui</span><span class="o">.</span><span class="n">win_request</span><span class="o">.</span><span class="n">addstr</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Insert the x position:&quot;</span><span class="p">)</span>
+        <span class="n">ui</span><span class="o">.</span><span class="n">win_request</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+
+        <span class="c1"># Gets the user input.</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">ui</span><span class="o">.</span><span class="n">win_input</span><span class="o">.</span><span class="n">getstr</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+        <span class="n">ui</span><span class="o">.</span><span class="n">clear_input</span><span class="p">()</span>
+
+        <span class="k">try</span><span class="p">:</span>      <span class="c1"># If the input can be converted into a float, it exits from the while.</span>
+            <span class="n">fx</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="k">break</span>
+
+        <span class="k">except</span><span class="p">:</span>   <span class="c1"># Asks again for the x position.</span>
+            <span class="n">ui</span><span class="o">.</span><span class="n">win_request</span><span class="o">.</span><span class="n">addstr</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">23</span><span class="p">,</span> <span class="s2">&quot;(try again)&quot;</span><span class="p">)</span>
+
+    <span class="n">ui</span><span class="o">.</span><span class="n">clear_request</span><span class="p">()</span>
+
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+
+        <span class="c1"># Asks the user for the y position.</span>
+        <span class="n">ui</span><span class="o">.</span><span class="n">win_request</span><span class="o">.</span><span class="n">addstr</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Insert the y position: &quot;</span><span class="p">)</span>
+        <span class="n">ui</span><span class="o">.</span><span class="n">win_request</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+
+        <span class="c1"># Gets the user input.</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">ui</span><span class="o">.</span><span class="n">win_input</span><span class="o">.</span><span class="n">getstr</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+        <span class="n">ui</span><span class="o">.</span><span class="n">clear_input</span><span class="p">()</span>
+
+        <span class="k">try</span><span class="p">:</span>      <span class="c1"># If the input can be converted into a float, it exits from the while.</span>
+            <span class="n">fy</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+            <span class="k">break</span>
+
+        <span class="k">except</span><span class="p">:</span>   <span class="c1"># Asks again for the y position.</span>
+            <span class="n">ui</span><span class="o">.</span><span class="n">win_request</span><span class="o">.</span><span class="n">addstr</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">23</span><span class="p">,</span> <span class="s2">&quot;(try again)&quot;</span><span class="p">)</span>
+
+    <span class="n">ui</span><span class="o">.</span><span class="n">clear_request</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">fx</span><span class="p">,</span> <span class="n">fy</span>   <span class="c1"># Returns the coordinates of the goal.</span></div>
+
+<span class="c1">### MAIN ###</span>
+<span class="k">if</span> <span class="vm">__name__</span><span class="o">==</span><span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function initializes the user interface, managed with the :class:`windows_organiser` class, </span>
+<span class="sd">    the ROS node and the :class:`autonomous_driving` class. Then waits for the user input and gives</span>
+<span class="sd">    the control to the corresponding module.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># The class windows_organiser is defined in the script user_interface.py</span>
+        <span class="c1"># All the user interface is controlled with this class.</span>
+        <span class="n">ui</span> <span class="o">=</span> <span class="n">user_interface</span><span class="o">.</span><span class="n">windows_organiser</span><span class="p">()</span>
+
+        <span class="c1"># Starts the ros node.</span>
+        <span class="n">rospy</span><span class="o">.</span><span class="n">init_node</span><span class="p">(</span><span class="s1">&#39;driving_mode&#39;</span><span class="p">)</span>
+
+        <span class="c1"># The autonomous_driving class is defined in the script autonomous_driving.py</span>
+        <span class="c1"># The autonomous drive modality is controlled with this class.</span>
+        <span class="n">ad</span> <span class="o">=</span> <span class="n">autonomous_driving</span><span class="o">.</span><span class="n">autonomous_driving</span><span class="p">(</span><span class="n">ui</span><span class="p">)</span>
+
+        <span class="k">while</span> <span class="ow">not</span> <span class="n">rospy</span><span class="o">.</span><span class="n">is_shutdown</span><span class="p">():</span>
+
+            <span class="n">key</span> <span class="o">=</span> <span class="n">ui</span><span class="o">.</span><span class="n">win_input</span><span class="o">.</span><span class="n">getch</span><span class="p">()</span>      <span class="c1"># Gets the user command.</span>
+
+            <span class="n">ui</span><span class="o">.</span><span class="n">win_info</span><span class="o">.</span><span class="n">addch</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">18</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>   <span class="c1"># Shows the command received.</span>
+            <span class="n">ui</span><span class="o">.</span><span class="n">win_info</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="nb">ord</span><span class="p">(</span><span class="s1">&#39;q&#39;</span><span class="p">):</span>   <span class="c1"># If the command is q, exit the while loop.</span>
+                <span class="k">break</span>
+
+            <span class="c1"># If the command is 1, enters in the autonomous driving mode.</span>
+            <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="nb">ord</span><span class="p">(</span><span class="s1">&#39;1&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">ad</span><span class="o">.</span><span class="n">is_active</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+
+                <span class="c1"># Shows that it is in the autonomous driving mode.</span>
+                <span class="n">ui</span><span class="o">.</span><span class="n">clear_request</span><span class="p">()</span>
+                <span class="n">ui</span><span class="o">.</span><span class="n">win_modes</span><span class="o">.</span><span class="n">addstr</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;--&gt;&quot;</span><span class="p">)</span>
+                <span class="n">ui</span><span class="o">.</span><span class="n">win_modes</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+
+                <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">ask_for_goal</span><span class="p">()</span>   <span class="c1"># Asks the user for a goal.</span>
+                <span class="n">ad</span><span class="o">.</span><span class="n">reach_goal</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>     <span class="c1"># Sends a request to the server to reach the goal.</span>
+
+            <span class="c1"># If the command is 2, enters in the free drive mode.</span>
+            <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="nb">ord</span><span class="p">(</span><span class="s1">&#39;2&#39;</span><span class="p">):</span>
+
+                <span class="c1"># If the autonomous drive is active, then cancel the goal.</span>
+                <span class="k">if</span> <span class="n">ad</span><span class="o">.</span><span class="n">is_active</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+                    <span class="n">ad</span><span class="o">.</span><span class="n">cancel_goal</span><span class="p">()</span>
+
+                <span class="n">ui</span><span class="o">.</span><span class="n">clear_request</span><span class="p">()</span>
+
+                <span class="c1"># Calls the function free_drive, which is defined in the script free_drive.py to enters the free drive mode.</span>
+                <span class="n">free_drive</span><span class="o">.</span><span class="n">free_drive</span><span class="p">(</span><span class="n">ui</span><span class="p">)</span>
+
+            <span class="c1"># If the command is 3, enters in the drive assistance mode.</span>
+            <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="nb">ord</span><span class="p">(</span><span class="s1">&#39;3&#39;</span><span class="p">):</span>
+
+                <span class="c1"># If the autonomous drive is active, then cancel the goal.</span>
+                <span class="k">if</span> <span class="n">ad</span><span class="o">.</span><span class="n">is_active</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+                    <span class="n">ad</span><span class="o">.</span><span class="n">cancel_goal</span><span class="p">()</span>
+
+                <span class="n">ui</span><span class="o">.</span><span class="n">clear_request</span><span class="p">()</span>
+
+                <span class="c1"># Calls the function drive_assistance, which is defined in the script client_drive_assistance.py to enters the drive assistance mode.</span>
+                <span class="n">client_drive_assistance</span><span class="o">.</span><span class="n">drive_assistance</span><span class="p">(</span><span class="n">ui</span><span class="p">)</span>
+
+            <span class="c1"># When it is in the autonomous driving mode, if c is pressed, cancels the goal.</span>
+            <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="nb">ord</span><span class="p">(</span><span class="s1">&#39;c&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">ad</span><span class="o">.</span><span class="n">is_active</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="n">ad</span><span class="o">.</span><span class="n">cancel_goal</span><span class="p">()</span>        <span class="c1"># Sends a cancel request.</span>
+
+            <span class="c1"># When it is in the autonomous driving mode, if n is pressed, send a new goal.</span>
+            <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="nb">ord</span><span class="p">(</span><span class="s1">&#39;n&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">ad</span><span class="o">.</span><span class="n">is_active</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="n">ad</span><span class="o">.</span><span class="n">cancel_goal</span><span class="p">()</span>        <span class="c1"># Sends a cancel request.</span>
+                <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">ask_for_goal</span><span class="p">()</span>   <span class="c1"># Asks for a new goal.</span>
+                <span class="n">ad</span><span class="o">.</span><span class="n">reach_goal</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>     <span class="c1"># Sends a request to the server to reach the new goal.</span>
+
+            <span class="k">else</span><span class="p">:</span>   <span class="c1"># The command is not valid.</span>
+                <span class="n">ui</span><span class="o">.</span><span class="n">command_not_valid</span><span class="p">()</span>
+
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="n">curses</span><span class="o">.</span><span class="n">nocbreak</span><span class="p">()</span>
+        <span class="n">curses</span><span class="o">.</span><span class="n">echo</span><span class="p">()</span>
+        <span class="n">curses</span><span class="o">.</span><span class="n">endwin</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Raja Farooq Dilshad.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

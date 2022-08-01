@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>scripts.autonomous_driving &mdash; rt2_assignment 1.0 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> rt2_assignment
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">rt2_assignment</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      <li>scripts.autonomous_driving</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for scripts.autonomous_driving</h1><div class="highlight"><pre>
+<span></span><span class="ch">#! /usr/bin/env python</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">.. module:: autonomous_driving</span>
+<span class="sd">    :platform: Unix</span>
+<span class="sd">    :synopsis: Python module for autonomous driving modality.</span>
+
+<span class="sd">.. moduleauthor:: Raja Farooq Dilshad</span>
+<span class="sd">Action client:</span>
+<span class="sd">    /move_base</span>
+
+<span class="sd">This module implements the autonomous driving modality, which allows the robot to reach a specified position in space.</span>
+<span class="sd">The program sends a goal to the action server /move_base, receiving feedbacks and monitoring the status until the goal </span>
+<span class="sd">is reached or canceled. Thanks to the gmapping algorithm, the robot can create a map of the surrounding environment </span>
+<span class="sd">during its tours. The move_base node implements the action server to control the robot through the shortest path to </span>
+<span class="sd">reach the given position. The user can also require to cancel the current goal or to send a new one.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1"># Run with: roslaunch final_assignment assignment.launch</span>
+
+<span class="c1">### LIBRARIES ###</span>
+<span class="kn">import</span> <span class="nn">rospy</span>
+<span class="kn">import</span> <span class="nn">actionlib</span>
+
+<span class="c1">### MESSAGES ###</span>
+<span class="kn">from</span> <span class="nn">move_base_msgs.msg</span> <span class="kn">import</span> <span class="n">MoveBaseAction</span><span class="p">,</span> <span class="n">MoveBaseGoal</span>
+
+<span class="c1">### CODE ###</span>
+<div class="viewcode-block" id="autonomous_driving"><a class="viewcode-back" href="../../index.html#scripts.autonomous_driving.autonomous_driving">[docs]</a><span class="k">class</span> <span class="nc">autonomous_driving</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;This class manages the autonomous driving mode, communicating with </span>
+<span class="sd">    the /move_base node through action server.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user_interface</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;This method initialises the autonomous_driving class.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">           user_interface(windows_organiser): class for printing on the user interface.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">goal_counter</span> <span class="o">=</span> <span class="mi">0</span>       <span class="c1"># Stores the number of the goal.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">feedback_counter</span> <span class="o">=</span> <span class="mi">0</span>   <span class="c1"># Stores the number of feedback received.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_active</span> <span class="o">=</span> <span class="kc">False</span>      <span class="c1"># True if it is reaching a goal.</span>
+
+        <span class="c1"># Available commands is autonomous driving is active.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">title</span> <span class="o">=</span> <span class="sa">R</span><span class="s2">&quot;&quot;&quot;    c - to cancel goal</span>
+<span class="s2">    n - to insert a new goal&quot;&quot;&quot;</span>
+
+        <span class="c1"># Creates the MoveBaseAction client.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">actionlib</span><span class="o">.</span><span class="n">SimpleActionClient</span><span class="p">(</span><span class="s1">&#39;/move_base&#39;</span><span class="p">,</span> <span class="n">MoveBaseAction</span><span class="p">)</span>
+
+        <span class="c1"># Stores the windows_organiser class as ui.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span> <span class="o">=</span> <span class="n">user_interface</span>
+
+<div class="viewcode-block" id="autonomous_driving.active_cb"><a class="viewcode-back" href="../../index.html#scripts.autonomous_driving.autonomous_driving.active_cb">[docs]</a>    <span class="k">def</span> <span class="nf">active_cb</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;This method executed when the communication starts.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">goal_counter</span> <span class="o">+=</span> <span class="mi">1</span>   <span class="c1"># Increments the goal counter.</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ui</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">win_info</span><span class="o">.</span><span class="n">addstr</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Action Server is processing goal n &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">goal_counter</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;... &quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">win_info</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="autonomous_driving.feedback_cb"><a class="viewcode-back" href="../../index.html#scripts.autonomous_driving.autonomous_driving.feedback_cb">[docs]</a>    <span class="k">def</span> <span class="nf">feedback_cb</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feedback</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;This method is executed when a feedback is received.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">feedback_counter</span> <span class="o">+=</span> <span class="mi">1</span>   <span class="c1"># Increments the feedback counter.</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ui</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Prints on the info window.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">win_info</span><span class="o">.</span><span class="n">addstr</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Feedback for goal n &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">goal_counter</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot; received.          &quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">win_info</span><span class="o">.</span><span class="n">addstr</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">31</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">feedback_counter</span> <span class="o">%</span> <span class="mi">10</span><span class="p">,</span> <span class="s2">&quot;&gt;&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">win_info</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="autonomous_driving.done_cb"><a class="viewcode-back" href="../../index.html#scripts.autonomous_driving.autonomous_driving.done_cb">[docs]</a>    <span class="k">def</span> <span class="nf">done_cb</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">status</span><span class="p">,</span> <span class="n">result</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;This method is executed when the communication ends.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            status(int): status returned by the action server.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_active</span> <span class="o">=</span> <span class="kc">False</span>   <span class="c1"># The action client communication is not active.</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ui</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+            
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">clear_modes</span><span class="p">()</span>    <span class="c1"># Clears the mode windows, c and n commands are no more available.</span>
+        
+        <span class="c1"># Prints on the info window the status returned by the action server communication.</span>
+        <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">win_info</span><span class="o">.</span><span class="n">addstr</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Goal n &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">goal_counter</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot; received a cancel request.&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">win_info</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+            <span class="k">return</span>
+
+        <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">win_info</span><span class="o">.</span><span class="n">addstr</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Goal n &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">goal_counter</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot; reached.                  &quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">win_info</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+            <span class="k">return</span>
+
+        <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">win_info</span><span class="o">.</span><span class="n">addstr</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Goal n &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">goal_counter</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot; was aborted.              &quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">win_info</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+            <span class="k">return</span>
+
+        <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="mi">5</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">win_info</span><span class="o">.</span><span class="n">addstr</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Goal n &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">goal_counter</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot; has been rejected.        &quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">win_info</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+            <span class="k">return</span>
+
+        <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="mi">8</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">win_info</span><span class="o">.</span><span class="n">addstr</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Goal n &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">goal_counter</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot; received a cancel request.&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">win_info</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+            <span class="k">return</span></div>
+
+<div class="viewcode-block" id="autonomous_driving.reach_goal"><a class="viewcode-back" href="../../index.html#scripts.autonomous_driving.autonomous_driving.reach_goal">[docs]</a>    <span class="k">def</span> <span class="nf">reach_goal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;This method sends a goal to the move base node, starting the action client communication.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            x(float): x goal position of the robot</span>
+<span class="sd">            y(float): y goal position of the robot</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_active</span> <span class="o">=</span> <span class="kc">True</span>   <span class="c1"># Processing the goal.</span>
+
+        <span class="c1"># Waits until the action server has started.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">wait_for_server</span><span class="p">()</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ui</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Prints the new commands available on the modes window.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">win_modes</span><span class="o">.</span><span class="n">addstr</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">title</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">win_modes</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+
+        <span class="c1"># Creates a goal to send to the action server.</span>
+        <span class="n">goal</span> <span class="o">=</span> <span class="n">MoveBaseGoal</span><span class="p">()</span>
+
+        <span class="c1"># Fills the elements of the goal.</span>
+        <span class="n">goal</span><span class="o">.</span><span class="n">target_pose</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">frame_id</span> <span class="o">=</span> <span class="s2">&quot;map&quot;</span>
+        <span class="n">goal</span><span class="o">.</span><span class="n">target_pose</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">stamp</span> <span class="o">=</span> <span class="n">rospy</span><span class="o">.</span><span class="n">Time</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+        <span class="n">goal</span><span class="o">.</span><span class="n">target_pose</span><span class="o">.</span><span class="n">pose</span><span class="o">.</span><span class="n">orientation</span><span class="o">.</span><span class="n">w</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">goal</span><span class="o">.</span><span class="n">target_pose</span><span class="o">.</span><span class="n">pose</span><span class="o">.</span><span class="n">position</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">x</span>
+        <span class="n">goal</span><span class="o">.</span><span class="n">target_pose</span><span class="o">.</span><span class="n">pose</span><span class="o">.</span><span class="n">position</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">y</span>
+   
+        <span class="c1"># Sends the goal to the action server.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">send_goal</span><span class="p">(</span><span class="n">goal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">done_cb</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_cb</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">feedback_cb</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="autonomous_driving.cancel_goal"><a class="viewcode-back" href="../../index.html#scripts.autonomous_driving.autonomous_driving.cancel_goal">[docs]</a>    <span class="k">def</span> <span class="nf">cancel_goal</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;This method sends a cancel request to the move_base server.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_active</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">cancel_goal</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ui</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">clear_modes</span><span class="p">()</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Raja Farooq Dilshad.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

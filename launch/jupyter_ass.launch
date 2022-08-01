@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+
+<launch>
+    
+  <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch" /> 
+  <node pkg="tf2_web_republisher" type="tf2_web_republisher" name="tf2_web_republisher" />
+  
+  <include file="$(find rt2_assignment)/launch/simulation_gmapping.launch"/>
+  <include file="$(find rt2_assignment)/launch/move_base.launch"/>
+
+  <node name="driver_assistance" pkg="rt2_assignment" type="driver_assistance_node" respawn="true">
+    <remap from="/base_scan" to="/scan"/>
+  </node>
+
+</launch>
