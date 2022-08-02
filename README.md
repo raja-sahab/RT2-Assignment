@@ -12,7 +12,7 @@ The jupyter notebook can be found here: [__driving_mode_notebook.ipynb__](https:
 
 Data Analysis
 ------------
-The results of the data analysis, computed with Matlab, can be found in [__rt2_Statistical_Analysis.pdf__](https://github.com/raja-sahab/rt2_assignment/blob/main/rt2_Statistical_Analysis.pdf)
+The results of the data analysis, computed with Matlab, can be found in [__rt2_Statistical_Analysis.pdf__](https://github.com/raja-sahab/rt2-assignment/blob/main/RT2_Statistical_Analysis.pdf)
 
 ## Task
 >Develop a software architecture for the control of the robot in the environment. The software will rely on the move_base
